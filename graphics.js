@@ -246,7 +246,7 @@ const Graphics = {
         ctx.fillText('Press any key to restart', canvas.width / 2, canvas.height / 2 + 90);
     },
 
-    // Draw an enemy
+    // Draw an enemy (ground or flying)
     drawEnemy(ctx, enemy, cameraX) {
         const screenX = enemy.x - cameraX;
 
@@ -255,6 +255,15 @@ const Graphics = {
             return;
         }
 
+        if (enemy.isFlying) {
+            this.drawFlyingEnemy(ctx, enemy, screenX);
+        } else {
+            this.drawGroundEnemy(ctx, enemy, screenX);
+        }
+    },
+
+    // Draw a ground enemy
+    drawGroundEnemy(ctx, enemy, screenX) {
         // Enemy body (yellow)
         ctx.fillStyle = '#FFD700';
         ctx.fillRect(screenX, enemy.y, enemy.width, enemy.height);
@@ -273,6 +282,53 @@ const Graphics = {
         ctx.fillRect(screenX + 10, enemy.y + 28, 20, 4);
         ctx.fillRect(screenX + 8, enemy.y + 26, 4, 2);
         ctx.fillRect(screenX + 28, enemy.y + 26, 4, 2);
+    },
+
+    // Draw a flying enemy with wings
+    drawFlyingEnemy(ctx, enemy, screenX) {
+        // Wing animation offset
+        const wingOffset = Math.sin(enemy.wingFrame) * 6;
+
+        // Left wing
+        ctx.fillStyle = '#FFA500';
+        ctx.beginPath();
+        ctx.moveTo(screenX - 2, enemy.y + 10);
+        ctx.lineTo(screenX - 15, enemy.y + 5 + wingOffset);
+        ctx.lineTo(screenX - 15, enemy.y + 20 + wingOffset);
+        ctx.lineTo(screenX - 2, enemy.y + 25);
+        ctx.closePath();
+        ctx.fill();
+
+        // Right wing
+        ctx.beginPath();
+        ctx.moveTo(screenX + enemy.width + 2, enemy.y + 10);
+        ctx.lineTo(screenX + enemy.width + 15, enemy.y + 5 + wingOffset);
+        ctx.lineTo(screenX + enemy.width + 15, enemy.y + 20 + wingOffset);
+        ctx.lineTo(screenX + enemy.width + 2, enemy.y + 25);
+        ctx.closePath();
+        ctx.fill();
+
+        // Wing details
+        ctx.fillStyle = '#FF8C00';
+        ctx.fillRect(screenX - 12, enemy.y + 10 + wingOffset, 8, 2);
+        ctx.fillRect(screenX + enemy.width + 4, enemy.y + 10 + wingOffset, 8, 2);
+
+        // Enemy body (yellow)
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(screenX, enemy.y, enemy.width, enemy.height);
+
+        // Face - slightly different from ground enemy
+        ctx.fillStyle = '#000000';
+        // Round eyes
+        ctx.fillRect(screenX + 8, enemy.y + 10, 6, 6);
+        ctx.fillRect(screenX + 26, enemy.y + 10, 6, 6);
+        // Eye whites
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(screenX + 10, enemy.y + 12, 3, 3);
+        ctx.fillRect(screenX + 28, enemy.y + 12, 3, 3);
+        // Small smile (flying enemies look determined)
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(screenX + 14, enemy.y + 28, 12, 3);
     },
 
     // Draw timer in top-right corner
