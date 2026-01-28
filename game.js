@@ -1,6 +1,24 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Game state
+let gameState = 'start'; // 'start', 'playing', 'end'
+let gameStartTime = 0;
+let survivalTime = 0;
+let worldSeed = Date.now();
+
+// Screen delay system
+let screenEnteredTime = Date.now();
+const SCREEN_DELAY = 2000; // 2 seconds
+
+// Enemy system
+const enemies = [];
+let maxEnemies = 1;
+let lastEnemySpawnTime = 0;
+let lastEnemyIncreaseTime = 0;
+const ENEMY_INCREASE_INTERVAL = 5000; // 5 seconds
+const ENEMY_SPAWN_COOLDOWN = 1000; // 1 second between spawns
+
 // Camera position (world coordinates)
 let cameraX = 0;
 
@@ -34,8 +52,147 @@ const PLATFORMS_PER_CHUNK = 3;
 
 // Seeded random number generator for consistent platform placement
 function seededRandom(seed) {
-    const x = Math.sin(seed * 9999) * 10000;
+    const x = Math.sin((seed + worldSeed) * 9999) * 10000;
     return x - Math.floor(x);
+}
+
+// Reset game state for new game
+function resetGame() {
+    // Generate new world seed for different platforms
+    worldSeed = Date.now();
+
+    // Reset player
+    player.x = 100;
+    player.y = 0;
+    player.velocityY = 0;
+    player.isGrounded = false;
+
+    // Clear platforms
+    platforms.length = 0;
+    platformChunks.clear();
+
+    // Clear enemies
+    enemies.length = 0;
+    maxEnemies = 1;
+    lastEnemySpawnTime = 0;
+    lastEnemyIncreaseTime = 0;
+
+    // Reset camera
+    cameraX = 0;
+
+    // Reset timer
+    survivalTime = 0;
+}
+
+// Spawn a new enemy at screen edge
+function spawnEnemy() {
+    const now = Date.now();
+    if (now - lastEnemySpawnTime < ENEMY_SPAWN_COOLDOWN) return;
+    if (enemies.length >= maxEnemies) return;
+
+    lastEnemySpawnTime = now;
+
+    // Spawn from left or right edge (prefer opposite side of player movement)
+    const spawnFromLeft = Math.random() < 0.5;
+    const spawnX = spawnFromLeft
+        ? cameraX - 50
+        : cameraX + canvas.width + 10;
+
+    const groundY = canvas.height - Graphics.groundHeight - 40;
+
+    const enemy = {
+        x: spawnX,
+        y: groundY,
+        width: 40,
+        height: 40,
+        speed: 3 + Math.random() * 2, // 3-5 speed
+        direction: spawnFromLeft ? 1 : -1, // face toward center
+        velocityY: 0,
+        gravity: 0.6,
+        jumpForce: -12,
+        isGrounded: true,
+        canJump: Math.random() < 0.3, // 30% chance to be a jumper
+        nextJumpTime: now + 1000 + Math.random() * 2000
+    };
+
+    enemies.push(enemy);
+}
+
+// Update all enemies
+function updateEnemies() {
+    const now = Date.now();
+    const groundY = canvas.height - Graphics.groundHeight - 40;
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+
+        // Move toward player
+        enemy.x += enemy.speed * enemy.direction;
+
+        // Random jumping for jumpers
+        if (enemy.canJump && enemy.isGrounded && now > enemy.nextJumpTime) {
+            enemy.velocityY = enemy.jumpForce;
+            enemy.isGrounded = false;
+            enemy.nextJumpTime = now + 1500 + Math.random() * 2000;
+        }
+
+        // Apply gravity
+        enemy.velocityY += enemy.gravity;
+        enemy.y += enemy.velocityY;
+
+        // Ground collision
+        if (enemy.y >= groundY) {
+            enemy.y = groundY;
+            enemy.velocityY = 0;
+            enemy.isGrounded = true;
+        }
+
+        // Platform collisions
+        for (const platform of platforms) {
+            if (checkEnemyPlatformCollision(enemy, platform)) {
+                enemy.y = platform.y - enemy.height;
+                enemy.velocityY = 0;
+                enemy.isGrounded = true;
+                break;
+            }
+        }
+
+        // Remove if too far off screen
+        const distanceFromCamera = Math.abs(enemy.x - (cameraX + canvas.width / 2));
+        if (distanceFromCamera > canvas.width * 1.5) {
+            enemies.splice(i, 1);
+        }
+    }
+}
+
+// Check enemy-platform collision
+function checkEnemyPlatformCollision(enemy, platform) {
+    const enemyBottom = enemy.y + enemy.height;
+    const enemyRight = enemy.x + enemy.width;
+    const platformBottom = platform.y + platform.height;
+
+    if (enemyRight > platform.x && enemy.x < platform.x + platform.width) {
+        if (enemy.velocityY >= 0 &&
+            enemyBottom >= platform.y &&
+            enemyBottom <= platformBottom + enemy.velocityY + 1 &&
+            enemy.y < platform.y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Check player-enemy collision
+function checkPlayerEnemyCollision() {
+    for (const enemy of enemies) {
+        if (player.x < enemy.x + enemy.width &&
+            player.x + player.width > enemy.x &&
+            player.y < enemy.y + enemy.height &&
+            player.y + player.height > enemy.y) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Generate platforms for a chunk
@@ -96,6 +253,31 @@ window.addEventListener('resize', resizeCanvas);
 
 // Event listeners for key presses
 document.addEventListener('keydown', (e) => {
+    const now = Date.now();
+    const canProceed = now - screenEnteredTime >= SCREEN_DELAY;
+
+    // Handle game state transitions
+    if (gameState === 'start') {
+        if (canProceed) {
+            gameState = 'playing';
+            gameStartTime = Date.now();
+            lastEnemyIncreaseTime = Date.now();
+        }
+        e.preventDefault();
+        return;
+    }
+
+    if (gameState === 'end') {
+        if (canProceed) {
+            resetGame();
+            gameState = 'start';
+            screenEnteredTime = Date.now();
+        }
+        e.preventDefault();
+        return;
+    }
+
+    // Normal gameplay key handling
     if (keys.hasOwnProperty(e.key)) {
         keys[e.key] = true;
         e.preventDefault();
@@ -202,14 +384,55 @@ function draw() {
         Graphics.drawPlatform(ctx, platform, cameraX);
     }
 
+    // Draw enemies
+    for (const enemy of enemies) {
+        Graphics.drawEnemy(ctx, enemy, cameraX);
+    }
+
     // Draw player
     Graphics.drawPlayer(ctx, player, cameraX);
 }
 
 // Game loop
 function gameLoop() {
-    update();
-    draw();
+    const now = Date.now();
+    const canProceed = now - screenEnteredTime >= SCREEN_DELAY;
+
+    if (gameState === 'start') {
+        // Draw background for start screen
+        Graphics.drawBackground(ctx, canvas, 0);
+        Graphics.drawStartScreen(ctx, canvas, canProceed);
+    } else if (gameState === 'playing') {
+        // Update survival time
+        survivalTime = (Date.now() - gameStartTime) / 1000;
+
+        // Increase max enemies every 5 seconds
+        if (now - lastEnemyIncreaseTime >= ENEMY_INCREASE_INTERVAL) {
+            maxEnemies++;
+            lastEnemyIncreaseTime = now;
+        }
+
+        // Spawn enemies
+        spawnEnemy();
+
+        // Update enemies
+        updateEnemies();
+
+        // Check for player-enemy collision
+        if (checkPlayerEnemyCollision()) {
+            gameState = 'end';
+            screenEnteredTime = Date.now();
+        }
+
+        update();
+        draw();
+        Graphics.drawTimer(ctx, canvas, survivalTime);
+    } else if (gameState === 'end') {
+        // Keep drawing the last game state as background
+        draw();
+        Graphics.drawEndScreen(ctx, canvas, survivalTime, canProceed);
+    }
+
     requestAnimationFrame(gameLoop);
 }
 

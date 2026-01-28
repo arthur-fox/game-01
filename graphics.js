@@ -201,5 +201,89 @@ const Graphics = {
         ctx.fillRect(screenX + 26, player.y + 10, 6, 6);
         // Mouth
         ctx.fillRect(screenX + 12, player.y + 26, 16, 4);
+    },
+
+    // Draw start screen
+    drawStartScreen(ctx, canvas, canProceed) {
+        // Dark overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Title
+        ctx.fillStyle = '#e94560';
+        ctx.font = 'bold 72px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SURVIVAL', canvas.width / 2, canvas.height / 2 - 50);
+
+        // Instruction (dimmed if not ready)
+        ctx.fillStyle = canProceed ? '#ffffff' : '#666666';
+        ctx.font = '28px Arial';
+        ctx.fillText('Press any key to start', canvas.width / 2, canvas.height / 2 + 40);
+    },
+
+    // Draw end screen
+    drawEndScreen(ctx, canvas, time, canProceed) {
+        // Dark overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Game Over text
+        ctx.fillStyle = '#e94560';
+        ctx.font = 'bold 72px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60);
+
+        // Final time
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 48px Arial';
+        ctx.fillText('Time: ' + time.toFixed(1) + 's', canvas.width / 2, canvas.height / 2 + 20);
+
+        // Restart instruction (dimmed if not ready)
+        ctx.fillStyle = canProceed ? '#ffffff' : '#666666';
+        ctx.font = '28px Arial';
+        ctx.fillText('Press any key to restart', canvas.width / 2, canvas.height / 2 + 90);
+    },
+
+    // Draw an enemy
+    drawEnemy(ctx, enemy, cameraX) {
+        const screenX = enemy.x - cameraX;
+
+        // Only draw if visible
+        if (screenX + enemy.width < 0 || screenX > ctx.canvas.width) {
+            return;
+        }
+
+        // Enemy body (yellow)
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(screenX, enemy.y, enemy.width, enemy.height);
+
+        // Angry face
+        ctx.fillStyle = '#000000';
+        // Angry eyes (slanted brows)
+        ctx.fillRect(screenX + 6, enemy.y + 8, 8, 6);
+        ctx.fillRect(screenX + 26, enemy.y + 8, 8, 6);
+        // Eye whites
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(screenX + 8, enemy.y + 10, 4, 4);
+        ctx.fillRect(screenX + 28, enemy.y + 10, 4, 4);
+        // Angry mouth
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(screenX + 10, enemy.y + 28, 20, 4);
+        ctx.fillRect(screenX + 8, enemy.y + 26, 4, 2);
+        ctx.fillRect(screenX + 28, enemy.y + 26, 4, 2);
+    },
+
+    // Draw timer in top-right corner
+    drawTimer(ctx, canvas, time) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(canvas.width - 150, 10, 140, 50);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(time.toFixed(1) + 's', canvas.width - 20, 20);
     }
 };
