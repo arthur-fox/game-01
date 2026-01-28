@@ -341,5 +341,40 @@ const Graphics = {
         ctx.textAlign = 'right';
         ctx.textBaseline = 'top';
         ctx.fillText(time.toFixed(1) + 's', canvas.width - 20, 20);
+    },
+
+    // Draw mute button next to timer
+    drawMuteButton(ctx, canvas, musicEnabled) {
+        const buttonX = canvas.width - 200;
+        const buttonY = 10;
+        const buttonSize = 50;
+
+        // Button background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(buttonX, buttonY, buttonSize, buttonSize);
+
+        // Speaker icon
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '28px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (musicEnabled) {
+            // Speaker with sound waves
+            ctx.fillText('\u{1F50A}', buttonX + buttonSize / 2, buttonY + buttonSize / 2);
+        } else {
+            // Muted speaker
+            ctx.fillText('\u{1F507}', buttonX + buttonSize / 2, buttonY + buttonSize / 2);
+        }
+    },
+
+    // Get mute button bounds for click detection
+    getMuteButtonBounds(canvas) {
+        return {
+            x: canvas.width - 200,
+            y: 10,
+            width: 50,
+            height: 50
+        };
     }
 };

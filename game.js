@@ -37,6 +37,8 @@ document.addEventListener('keydown', (e) => {
             gameState = 'playing';
             gameStartTime = Date.now();
             lastEnemyIncreaseTime = Date.now();
+            GameAudio.init();
+            GameAudio.playMusic();
         }
         e.preventDefault();
         return;
@@ -63,6 +65,22 @@ document.addEventListener('keyup', (e) => {
     if (keys.hasOwnProperty(e.key)) {
         keys[e.key] = false;
         e.preventDefault();
+    }
+});
+
+// Click handler for mute button
+canvas.addEventListener('click', (e) => {
+    if (gameState !== 'playing') return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const bounds = Graphics.getMuteButtonBounds(canvas);
+
+    if (clickX >= bounds.x && clickX <= bounds.x + bounds.width &&
+        clickY >= bounds.y && clickY <= bounds.y + bounds.height) {
+        GameAudio.toggleMusic();
     }
 });
 
@@ -125,6 +143,8 @@ function gameLoop() {
 
         // Check for player-enemy collision
         if (checkPlayerEnemyCollision()) {
+            GameAudio.playHit();
+            GameAudio.stopMusic();
             gameState = 'end';
             screenEnteredTime = Date.now();
         }
@@ -140,6 +160,7 @@ function gameLoop() {
 
         draw();
         Graphics.drawTimer(ctx, canvas, survivalTime);
+        Graphics.drawMuteButton(ctx, canvas, GameAudio.isMusicEnabled());
     } else if (gameState === 'end') {
         // Keep drawing the last game state as background
         draw();

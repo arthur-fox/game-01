@@ -51,6 +51,7 @@ function updatePlayer(canvas) {
     if (keys.ArrowUp && player.isGrounded) {
         player.velocityY = player.jumpForce;
         player.isGrounded = false;
+        GameAudio.playJump();
     }
 
     // Apply gravity
