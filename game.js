@@ -57,6 +57,13 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
+    // Mute toggle with M key
+    if (e.key === 'm' || e.key === 'M') {
+        GameAudio.toggleSound();
+        e.preventDefault();
+        return;
+    }
+
     // Normal gameplay key handling
     if (keys.hasOwnProperty(e.key)) {
         keys[e.key] = true;
@@ -83,7 +90,7 @@ canvas.addEventListener('click', (e) => {
 
     if (clickX >= bounds.x && clickX <= bounds.x + bounds.width &&
         clickY >= bounds.y && clickY <= bounds.y + bounds.height) {
-        GameAudio.toggleMusic();
+        GameAudio.toggleSound();
     }
 });
 
@@ -172,7 +179,7 @@ function gameLoop() {
 
         draw();
         Graphics.drawTimer(ctx, canvas, survivalTime);
-        Graphics.drawMuteButton(ctx, canvas, GameAudio.isMusicEnabled());
+        Graphics.drawMuteButton(ctx, canvas, GameAudio.isSoundEnabled());
     } else if (gameState === 'end') {
         // Keep drawing the last game state as background
         draw();

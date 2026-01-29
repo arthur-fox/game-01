@@ -350,28 +350,33 @@ const Graphics = {
     },
 
     // Draw mute button next to timer
-    drawMuteButton(ctx, canvas, musicEnabled) {
+    drawMuteButton(ctx, canvas, soundEnabled) {
         const buttonX = canvas.width - 200;
         const buttonY = 10;
-        const buttonSize = 50;
+        const buttonWidth = 80;
+        const buttonHeight = 50;
 
         // Button background
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(buttonX, buttonY, buttonSize, buttonSize);
+        ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
 
-        // Speaker icon
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '28px Arial';
+        // Speaker icon and label
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        if (musicEnabled) {
-            // Speaker with sound waves
-            ctx.fillText('\u{1F50A}', buttonX + buttonSize / 2, buttonY + buttonSize / 2);
+        // Icon
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '20px Arial';
+        if (soundEnabled) {
+            ctx.fillText('\u{1F50A}', buttonX + 22, buttonY + buttonHeight / 2);
         } else {
-            // Muted speaker
-            ctx.fillText('\u{1F507}', buttonX + buttonSize / 2, buttonY + buttonSize / 2);
+            ctx.fillText('\u{1F507}', buttonX + 22, buttonY + buttonHeight / 2);
         }
+
+        // Label showing M key shortcut
+        ctx.font = '12px monospace';
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillText('[M]', buttonX + 58, buttonY + buttonHeight / 2);
     },
 
     // Get mute button bounds for click detection
@@ -379,7 +384,7 @@ const Graphics = {
         return {
             x: canvas.width - 200,
             y: 10,
-            width: 50,
+            width: 80,
             height: 50
         };
     }
