@@ -228,28 +228,143 @@ const Graphics = {
         ctx.fillText('Press any key to start', canvas.width / 2, canvas.height / 2 + 40);
     },
 
-    // Draw end screen
-    drawEndScreen(ctx, canvas, time, canProceed) {
+    // Draw end screen with leaderboard
+    drawEndScreen(ctx, canvas, time, canProceed, scores, playerRank) {
         // Dark overlay
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const centerX = canvas.width / 2;
+        let y = 60;
 
         // Game Over text
         ctx.fillStyle = '#e94560';
-        ctx.font = 'bold 72px Arial';
+        ctx.font = 'bold 56px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60);
+        ctx.fillText('GAME OVER', centerX, y);
+        y += 60;
 
         // Final time
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 48px Arial';
-        ctx.fillText('Time: ' + time.toFixed(1) + 's', canvas.width / 2, canvas.height / 2 + 20);
+        ctx.font = 'bold 36px Arial';
+        ctx.fillText('Time: ' + time.toFixed(1) + 's', centerX, y);
+        y += 60;
+
+        // Leaderboard title
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 32px Arial';
+        ctx.fillText('TOP 10', centerX, y);
+        y += 45;
+
+        // Leaderboard entries
+        ctx.font = '24px monospace';
+        if (scores && scores.length > 0) {
+            for (let i = 0; i < scores.length; i++) {
+                const entry = scores[i];
+                const isPlayer = i === playerRank;
+
+                // Highlight player's score
+                if (isPlayer) {
+                    ctx.fillStyle = '#00ff00';
+                } else {
+                    ctx.fillStyle = '#ffffff';
+                }
+
+                const rank = (i + 1).toString().padStart(2, ' ');
+                const name = entry.name.padEnd(4, ' ');
+                const score = entry.score.toFixed(1) + 's';
+
+                ctx.fillText(`${rank}. ${name}  ${score}`, centerX, y);
+                y += 32;
+            }
+        } else {
+            ctx.fillStyle = '#888888';
+            ctx.fillText('No scores yet!', centerX, y);
+            y += 32;
+        }
+
+        // Padding before restart instruction
+        y = Math.max(y + 30, canvas.height - 80);
 
         // Restart instruction (dimmed if not ready)
         ctx.fillStyle = canProceed ? '#ffffff' : '#666666';
-        ctx.font = '28px Arial';
-        ctx.fillText('Press any key to restart', canvas.width / 2, canvas.height / 2 + 90);
+        ctx.font = '24px Arial';
+        ctx.fillText('Press any key to restart', centerX, y);
+    },
+
+    // Draw name entry screen for high scores
+    drawNameEntry(ctx, canvas, time, currentName) {
+        // Dark overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // High score celebration
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('NEW HIGH SCORE!', centerX, centerY - 100);
+
+        // Show the time
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px Arial';
+        ctx.fillText(time.toFixed(1) + 's', centerX, centerY - 40);
+
+        // Name entry prompt
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '24px Arial';
+        ctx.fillText('Enter your name:', centerX, centerY + 20);
+
+        // Name entry box
+        const boxWidth = 180;
+        const boxHeight = 60;
+        const boxX = centerX - boxWidth / 2;
+        const boxY = centerY + 50;
+
+        // Box background
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        // Box border
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+        // Display entered characters with underscores for remaining
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px monospace';
+
+        let displayText = currentName;
+        while (displayText.length < 4) {
+            displayText += '_';
+        }
+
+        // Add spacing between characters
+        const charSpacing = 36;
+        const startX = centerX - (charSpacing * 1.5);
+
+        for (let i = 0; i < 4; i++) {
+            const char = displayText[i];
+            const charX = startX + (i * charSpacing);
+
+            // Highlight current position with cursor blink
+            if (i === currentName.length && Math.floor(Date.now() / 500) % 2 === 0) {
+                ctx.fillStyle = '#FFD700';
+            } else {
+                ctx.fillStyle = i < currentName.length ? '#ffffff' : '#666666';
+            }
+
+            ctx.fillText(char, charX, boxY + boxHeight / 2);
+        }
+
+        // Instructions
+        ctx.fillStyle = '#888888';
+        ctx.font = '18px Arial';
+        ctx.fillText('Type A-Z, then press ENTER', centerX, boxY + boxHeight + 35);
     },
 
     // Draw an enemy (ground or flying)

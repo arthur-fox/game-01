@@ -4,10 +4,15 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game state
-let gameState = 'start'; // 'start', 'playing', 'end'
+let gameState = 'start'; // 'start', 'playing', 'entering_name', 'end'
 let gameStartTime = 0;
 let survivalTime = 0;
 let worldSeed = Date.now();
+
+// Leaderboard state
+let playerName = '';
+let isHighScore = false;
+let leaderboardFetched = false;
 
 // Screen delay system
 let screenEnteredTime = Date.now();
@@ -29,6 +34,35 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
+// Handle player death - check leaderboard and transition state
+async function handlePlayerDeath() {
+    GameAudio.playHit();
+    GameAudio.stopMusic();
+
+    // Fetch current leaderboard
+    await Leaderboard.fetch();
+    leaderboardFetched = true;
+
+    // Check if player made the top 10
+    if (Leaderboard.qualifies(survivalTime)) {
+        isHighScore = true;
+        playerName = '';
+        gameState = 'entering_name';
+    } else {
+        isHighScore = false;
+        gameState = 'end';
+    }
+
+    screenEnteredTime = Date.now();
+}
+
+// Submit the player's score
+async function submitScore() {
+    await Leaderboard.submit(playerName, survivalTime);
+    gameState = 'end';
+    screenEnteredTime = Date.now();
+}
+
 // Event listeners for key presses
 document.addEventListener('keydown', (e) => {
     const now = Date.now();
@@ -40,9 +74,37 @@ document.addEventListener('keydown', (e) => {
             gameState = 'playing';
             gameStartTime = Date.now();
             lastEnemyIncreaseTime = Date.now();
+            Leaderboard.resetPlayerRank();
             GameAudio.init();
             GameAudio.playMusic();
         }
+        e.preventDefault();
+        return;
+    }
+
+    // Name entry state - handle letter input
+    if (gameState === 'entering_name') {
+        // Letter keys (A-Z)
+        if (e.key.length === 1 && e.key.match(/[a-zA-Z]/) && playerName.length < 4) {
+            playerName += e.key.toUpperCase();
+            e.preventDefault();
+            return;
+        }
+
+        // Backspace - delete last character
+        if (e.key === 'Backspace' && playerName.length > 0) {
+            playerName = playerName.slice(0, -1);
+            e.preventDefault();
+            return;
+        }
+
+        // Enter - submit if we have at least 1 character
+        if (e.key === 'Enter' && playerName.length > 0) {
+            submitScore();
+            e.preventDefault();
+            return;
+        }
+
         e.preventDefault();
         return;
     }
@@ -102,6 +164,9 @@ function resetGame() {
     resetEnemies();
     cameraX = 0;
     survivalTime = 0;
+    playerName = '';
+    isHighScore = false;
+    leaderboardFetched = false;
 }
 
 // Draw everything
@@ -162,10 +227,7 @@ function gameLoop() {
 
         // Check for player-enemy collision
         if (checkPlayerEnemyCollision()) {
-            GameAudio.playHit();
-            GameAudio.stopMusic();
-            gameState = 'end';
-            screenEnteredTime = Date.now();
+            handlePlayerDeath();
         }
 
         // Update player
@@ -180,10 +242,14 @@ function gameLoop() {
         draw();
         Graphics.drawTimer(ctx, canvas, survivalTime);
         Graphics.drawMuteButton(ctx, canvas, GameAudio.isSoundEnabled());
+    } else if (gameState === 'entering_name') {
+        // Draw game state in background
+        draw();
+        Graphics.drawNameEntry(ctx, canvas, survivalTime, playerName);
     } else if (gameState === 'end') {
         // Keep drawing the last game state as background
         draw();
-        Graphics.drawEndScreen(ctx, canvas, survivalTime, canProceed);
+        Graphics.drawEndScreen(ctx, canvas, survivalTime, canProceed, Leaderboard.scores, Leaderboard.playerRank);
     }
 
     requestAnimationFrame(gameLoop);
