@@ -8,10 +8,10 @@ let lastEnemyIncreaseTime = 0;
 const ENEMY_INCREASE_INTERVAL = 5000; // 5 seconds
 const ENEMY_SPAWN_COOLDOWN = 1000; // 1 second between spawns
 const MAX_TOTAL_ENEMIES = 50;
-const FLYING_ENEMY_START_TIME = 10000; // Flying enemies after 10 seconds
+const FLYING_ENEMY_START_TIME = 5000; // Flying enemies after 5 seconds (was 10)
 
 // Spawn a ground enemy at screen edge
-function spawnGroundEnemy(cameraX, canvas) {
+function spawnGroundEnemy(cameraX, canvas, survivalTime) {
     const now = Date.now();
     const spawnFromLeft = Math.random() < 0.5;
     const spawnX = spawnFromLeft
@@ -20,12 +20,15 @@ function spawnGroundEnemy(cameraX, canvas) {
 
     const groundY = canvas.height - Graphics.groundHeight - 40;
 
+    // Speed multiplier: 1x at start, up to 2x at 30 seconds
+    const speedMultiplier = Math.min(2, 1 + (survivalTime / 30));
+
     const enemy = {
         x: spawnX,
         y: groundY,
         width: 40,
         height: 40,
-        speed: 3 + Math.random() * 2,
+        speed: (3 + Math.random() * 2) * speedMultiplier,
         direction: spawnFromLeft ? 1 : -1,
         velocityY: 0,
         gravity: 0.6,
@@ -40,7 +43,7 @@ function spawnGroundEnemy(cameraX, canvas) {
 }
 
 // Spawn a flying enemy at screen edge
-function spawnFlyingEnemy(cameraX, canvas) {
+function spawnFlyingEnemy(cameraX, canvas, survivalTime) {
     const spawnFromLeft = Math.random() < 0.5;
     const spawnX = spawnFromLeft
         ? cameraX - 50
@@ -51,6 +54,9 @@ function spawnFlyingEnemy(cameraX, canvas) {
     const maxY = canvas.height - Graphics.groundHeight - 150;
     const spawnY = minY + Math.random() * (maxY - minY);
 
+    // Speed multiplier: 1x at start, up to 2x at 30 seconds
+    const speedMultiplier = Math.min(2, 1 + (survivalTime / 30));
+
     const enemy = {
         x: spawnX,
         y: spawnY,
@@ -58,7 +64,7 @@ function spawnFlyingEnemy(cameraX, canvas) {
         startX: spawnX,
         width: 40,
         height: 40,
-        speed: 4 + Math.random() * 2,
+        speed: (4 + Math.random() * 2) * speedMultiplier,
         direction: spawnFromLeft ? 1 : -1,
         isFlying: true,
         zigzag: Math.random() < 0.5,
@@ -71,7 +77,7 @@ function spawnFlyingEnemy(cameraX, canvas) {
 }
 
 // Main spawn function - decides which type to spawn
-function spawnEnemy(cameraX, canvas, gameStartTime) {
+function spawnEnemy(cameraX, canvas, gameStartTime, survivalTime) {
     const now = Date.now();
     if (now - lastEnemySpawnTime < ENEMY_SPAWN_COOLDOWN) return;
     if (enemies.length >= maxEnemies) return;
@@ -82,11 +88,13 @@ function spawnEnemy(cameraX, canvas, gameStartTime) {
     const timePlaying = now - gameStartTime;
     const canSpawnFlying = timePlaying > FLYING_ENEMY_START_TIME;
 
-    // 30% chance for flying enemy after 10 seconds
-    if (canSpawnFlying && Math.random() < 0.3) {
-        spawnFlyingEnemy(cameraX, canvas);
+    // Flying chance scales with time: 40% at start, up to 60% after 20 seconds
+    const flyingChance = Math.min(0.6, 0.4 + (timePlaying / 40000));
+
+    if (canSpawnFlying && Math.random() < flyingChance) {
+        spawnFlyingEnemy(cameraX, canvas, survivalTime);
     } else {
-        spawnGroundEnemy(cameraX, canvas);
+        spawnGroundEnemy(cameraX, canvas, survivalTime);
     }
 }
 

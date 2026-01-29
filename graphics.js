@@ -165,6 +165,10 @@ const Graphics = {
             return;
         }
 
+        // Apply opacity for disappearing platforms
+        ctx.save();
+        ctx.globalAlpha = platform.opacity !== undefined ? platform.opacity : 1;
+
         // Platform base
         ctx.fillStyle = '#8B4513';
         ctx.fillRect(screenX, platform.y, platform.width, platform.height);
@@ -184,6 +188,8 @@ const Graphics = {
         ctx.fillStyle = '#6B3510';
         ctx.fillRect(screenX, platform.y + 8, 4, platform.height - 8);
         ctx.fillRect(screenX + platform.width - 4, platform.y + 8, 4, platform.height - 8);
+
+        ctx.restore();
     },
 
     // Draw the player

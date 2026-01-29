@@ -13,6 +13,9 @@ let worldSeed = Date.now();
 let screenEnteredTime = Date.now();
 const SCREEN_DELAY = 2000; // 2 seconds
 
+// Delta time tracking for accurate updates
+let lastFrameTime = Date.now();
+
 // Camera position (world coordinates)
 let cameraX = 0;
 
@@ -122,10 +125,16 @@ function gameLoop() {
     const canProceed = now - screenEnteredTime >= SCREEN_DELAY;
 
     if (gameState === 'start') {
+        // Reset frame time when in start screen
+        lastFrameTime = now;
         // Draw background for start screen
         Graphics.drawBackground(ctx, canvas, 0);
         Graphics.drawStartScreen(ctx, canvas, canProceed);
     } else if (gameState === 'playing') {
+        // Calculate delta time (capped at 100ms to prevent huge jumps)
+        const deltaTime = Math.min(100, now - lastFrameTime);
+        lastFrameTime = now;
+
         // Update survival time
         survivalTime = (Date.now() - gameStartTime) / 1000;
 
@@ -135,11 +144,14 @@ function gameLoop() {
             lastEnemyIncreaseTime = now;
         }
 
-        // Spawn enemies
-        spawnEnemy(cameraX, canvas, gameStartTime);
+        // Spawn enemies (pass survivalTime for speed scaling)
+        spawnEnemy(cameraX, canvas, gameStartTime, survivalTime);
 
         // Update enemies
         updateEnemies(cameraX, canvas);
+
+        // Update platform stability (disappearing platforms)
+        updatePlatformStability(player, deltaTime);
 
         // Check for player-enemy collision
         if (checkPlayerEnemyCollision()) {
