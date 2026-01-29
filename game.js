@@ -255,7 +255,7 @@ function gameLoop() {
         ctx.font = '32px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('You Died', canvas.width / 2, canvas.height / 2);
     } else if (gameState === 'entering_name') {
         // Draw game state in background
         draw();

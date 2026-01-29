@@ -217,10 +217,10 @@ const Graphics = {
 
         // Title
         ctx.fillStyle = '#e94560';
-        ctx.font = 'bold 72px Arial';
+        ctx.font = 'bold 64px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('SURVIVAL', canvas.width / 2, canvas.height / 2 - 50);
+        ctx.fillText("BLOCKY'S SURVIVAL", canvas.width / 2, canvas.height / 2 - 50);
 
         // Instruction (dimmed if not ready)
         ctx.fillStyle = canProceed ? '#ffffff' : '#666666';
