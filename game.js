@@ -4,7 +4,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game state
-let gameState = 'start'; // 'start', 'playing', 'entering_name', 'end'
+let gameState = 'start'; // 'start', 'playing', 'dead', 'entering_name', 'end'
 let gameStartTime = 0;
 let survivalTime = 0;
 let worldSeed = Date.now();
@@ -36,10 +36,13 @@ window.addEventListener('resize', resizeCanvas);
 
 // Handle player death - check leaderboard and transition state
 async function handlePlayerDeath() {
+    // IMMEDIATELY stop gameplay
+    gameState = 'dead';
+
     GameAudio.playHit();
     GameAudio.stopMusic();
 
-    // Fetch current leaderboard
+    // Fetch current leaderboard (game is already paused)
     await Leaderboard.fetch();
     leaderboardFetched = true;
 
@@ -242,6 +245,17 @@ function gameLoop() {
         draw();
         Graphics.drawTimer(ctx, canvas, survivalTime);
         Graphics.drawMuteButton(ctx, canvas, GameAudio.isSoundEnabled());
+    } else if (gameState === 'dead') {
+        // Frozen state while fetching leaderboard
+        draw();
+        // Show a simple "loading" overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '32px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2);
     } else if (gameState === 'entering_name') {
         // Draw game state in background
         draw();
